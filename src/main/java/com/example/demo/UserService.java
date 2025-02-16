@@ -7,45 +7,44 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
 
+    private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserMapper userMapper, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userMapper = userMapper;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserDTO> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(userMapper::toUserDTO)
+                .collect(Collectors.toList());
     }
 
-    public Optional<User> getUserById(Long id) {
-        return userRepository.findById(id);
+    public Optional<UserDTO> getUserById(Long id) {
+        return userRepository.findById(id)
+                .map(userMapper::toUserDTO);
     }
 
     @Transactional
-    public User createUser(User user) {
+    public UserDTO createUser(UserCreationDTO userCreationDTO) {
+        User user = userMapper.toUser(userCreationDTO);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        return userMapper.toUserDTO(savedUser);
     }
 
     @Transactional
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
     }
-
-    /* public void registerUser(String username, String rawPassword, Set<Role> roles) {
-        String encodedPassword = passwordEncoder.encode(rawPassword);
-        User user = new User();
-        user.setUsername(username);
-        user.setPassword(encodedPassword);
-        user.setRoles(roles);
-        userRepository.save(user);
-    } */
 
 }

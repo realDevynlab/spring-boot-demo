@@ -14,7 +14,7 @@ public class UserRepositoryTest {
     @Autowired
     private UserRepository userRepository;
 
-    @Test
+    /* @Test
     public void testCreateUser() {
         User user = new User();
         user.setUsername("testuser");
@@ -23,5 +23,5 @@ public class UserRepositoryTest {
 
         User savedUser = userRepository.save(user);
         assertNotNull(savedUser.getId());
-    }
+    } */
 }

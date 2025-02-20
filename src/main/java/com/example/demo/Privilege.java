@@ -4,12 +4,10 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Set;
-
 @Setter
 @Getter
-@Entity
-@Table(name = "privileges")
+// @Entity
+// @Table(name = "privileges")
 public class Privilege extends Auditable {
 
     @Id
@@ -19,7 +17,7 @@ public class Privilege extends Auditable {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @ManyToMany(mappedBy = "privileges")
-    private Set<Role> roles;
+    /* @ManyToMany(mappedBy = "privileges")
+    private Set<Role> roles; */
 
 }

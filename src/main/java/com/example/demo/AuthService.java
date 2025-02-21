@@ -17,7 +17,6 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(signInDTO.getUsernameOrEmail(), signInDTO.getPassword())
         );
-        // Extract custom user details
         CustomUserDetails authenticatedUser = (CustomUserDetails) authentication.getPrincipal();
         String accessToken = jwtService.getAccessToken(authentication);
         String refreshToken = jwtService.getRefreshToken(authentication);

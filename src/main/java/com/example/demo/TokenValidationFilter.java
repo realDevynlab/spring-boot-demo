@@ -19,35 +19,33 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+
 @Component
 @RequiredArgsConstructor
 public class TokenValidationFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService; // Use JwtService for decoding tokens
+    private final JwtService jwtService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String token = extractToken(request);
-
+        String bearerToken = request.getHeader(AUTHORIZATION);
+        String token = null;
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            token = bearerToken.substring(7);
+        }
         if (StringUtils.hasText(token)) {
             try {
-                // Decode the token and extract claims
                 Jwt decodedToken = jwtService.decodeToken(token);
-
-                String username = decodedToken.getSubject(); // "sub" claim for username/email
-                Set<String> roles = decodedToken.getClaim("roles"); // Extract roles claim (only roles now)
-                if (roles == null) roles = Set.of(); // Use an empty set if roles are missing
-
-                // Convert roles to SimpleGrantedAuthority
-                Collection<SimpleGrantedAuthority> authorities = convertRolesToAuthorities(roles);
-
-                // Create Authentication with username and authorities
+                String username = decodedToken.getSubject();
+                Set<String> roles = decodedToken.getClaim("roles");
+                if (roles == null) roles = Set.of();
+                Collection<SimpleGrantedAuthority> authorities = roles.stream()
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                        .collect(Collectors.toSet());
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username, null, authorities);
-
-                // Set Authentication in SecurityContext
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (JwtException e) {
-                // Log the error or handle token validation failure (expiry, tampering, etc.)
                 SecurityContextHolder.clearContext();
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
@@ -56,20 +54,4 @@ public class TokenValidationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private String extractToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7); // Remove "Bearer " prefix
-        }
-        return null;
-    }
-
-    /**
-     * Convert roles to SimpleGrantedAuthority objects.
-     */
-    private Collection<SimpleGrantedAuthority> convertRolesToAuthorities(Set<String> roles) {
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role)) // Prefix roles with "ROLE_"
-                .collect(Collectors.toSet());
-    }
 }

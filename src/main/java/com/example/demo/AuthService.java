@@ -33,17 +33,11 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(signInDTO.getUsernameOrEmail(), signInDTO.getPassword())
         );
         CustomUserDetails authenticatedUser = (CustomUserDetails) authentication.getPrincipal();
-
-        // Extract roles
         Collection<String> roles = authenticatedUser.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
-
-        // Generate tokens
         String accessToken = jwtService.generateAccessToken(authenticatedUser.getUsername(), roles);
         String refreshToken = jwtService.generateRefreshToken(authenticatedUser.getUsername());
-
-        // Prepare response
         UserDetailsDTO userDetailsDTO = new UserDetailsDTO(
                 authenticatedUser.getId(),
                 authenticatedUser.getUsername(),

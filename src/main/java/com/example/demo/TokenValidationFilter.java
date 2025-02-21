@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class TokenValidationFilter extends OncePerRequestFilter {
@@ -36,7 +38,6 @@ public class TokenValidationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        // Skip filter if authentication already exists in SecurityContext
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             filterChain.doFilter(request, response);
             return;
@@ -49,26 +50,26 @@ public class TokenValidationFilter extends OncePerRequestFilter {
         }
         try {
             Jwt decodedToken = jwtService.decodeToken(token);
-            if (refreshTokenService.isTokenRevoked(token)) {
+            /* if (refreshTokenService.isTokenRevoked(token)) {
                 sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token has been revoked");
                 return;
-            }
+            } */
             String username = decodedToken.getSubject();
-            Set<String> roles = decodedToken.getClaim("roles");
+            log.info("User '{}' authenticated.", username);
+            Collection<String> roles = decodedToken.getClaim("roles");
+            log.info("Roles: {}", roles);
             if (roles == null) roles = Set.of();
             Collection<SimpleGrantedAuthority> authorities = roles.stream()
-                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                    .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toSet());
-            // Set SecurityContext authentication (only if SecurityContext is empty)
+            log.info("Authorities: {}", authorities);
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (JwtException e) {
-            // Clear the SecurityContext and send custom error response
             SecurityContextHolder.clearContext();
             sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token");
             return;
         }
-        // Continue with the filter chain
         filterChain.doFilter(request, response);
     }
 
@@ -77,10 +78,10 @@ public class TokenValidationFilter extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
         for (String permittedEndpoint : permitAllEndpoints) {
             if (pathMatcher.match(permittedEndpoint, requestURI)) {
-                return true; // Bypass filter for matching endpoints
+                return true;
             }
         }
-        return false; // Apply filter for other endpoints
+        return false;
     }
 
     private String extractBearerToken(String bearerToken) {

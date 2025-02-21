@@ -33,21 +33,14 @@ public class UserService {
 
     @Transactional
     public UserDTO createUser(UserCreationDTO userCreationDTO) {
-        // Use the mapper to create the User object without roles
         User user = userMapper.toUser(userCreationDTO);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        // Resolve roles and set them to the user
         Set<Role> roles = userCreationDTO.getRoles().stream()
                 .map(roleName -> roleRepository.findByName(roleName)
                         .orElseThrow(() -> new IllegalArgumentException("Role not found: " + roleName)))
                 .collect(Collectors.toSet());
         user.setRoles(roles);
-
-        // Save the user to the database
         User savedUser = userRepository.save(user);
-
-        // Return the mapped UserDTO
         return userMapper.toUserDTO(savedUser);
     }
 

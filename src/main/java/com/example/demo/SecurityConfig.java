@@ -40,7 +40,7 @@ public class SecurityConfig {
                         .requestMatchers(userRoleEndpoints).hasRole("USER")
                         .requestMatchers(adminRoleEndpoints).hasRole("ADMIN")
                         .anyRequest().authenticated())
-                .addFilterBefore(tokenValidationFilter, UsernamePasswordAuthenticationFilter.class) // Register TokenValidationFilter
+                .addFilterBefore(tokenValidationFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         return http.build();

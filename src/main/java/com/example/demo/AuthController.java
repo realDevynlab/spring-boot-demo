@@ -8,12 +8,12 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/auth")
+@RequestMapping("api/auth")
 public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/sign-in")
+    @PostMapping("sign-in")
     public ResponseEntity<SignInResponseDTO> signIn(@Valid @RequestBody SignInDTO signInDTO) {
         SignInResponseDTO response = authService.signIn(signInDTO);
         return new ResponseEntity<>(response, HttpStatus.OK);

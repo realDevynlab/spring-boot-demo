@@ -24,6 +24,8 @@ public class User extends Auditable {
     @Column(nullable = false, unique = true)
     private String username;
 
+    private boolean deleted = false;
+
     @NotBlank(message = "Email is mandatory")
     @Email(message = "Email should be valid")
     @Column(nullable = false, unique = true)
